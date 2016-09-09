@@ -28,7 +28,7 @@ TOKEN_hier
 ## Stations
 Via `station.py` kan men stationsinformatie opvragen (naam, type, land, coördinaten, type).
 
-**Gebruik:*
+**Gebruik:**
 Geef alle stations weer:
 `./station.py`
 
