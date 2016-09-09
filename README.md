@@ -1,6 +1,6 @@
 # NS-API-python
 Python scripts om informatie via de NS API te verkrijgen.
-============
+
 ## Storingen
 Via `storing.py` kan men de actuele storingen opvragen. Deze worden via Pushbullet eenmalig verzonden naar de gebruiker.
 
