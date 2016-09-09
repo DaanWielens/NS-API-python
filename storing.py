@@ -4,8 +4,6 @@ NS-API: Storingen
     Geeft een lijst met storingen weer
 
     Gebruik:
-    ./storing.py
-        -> geeft alle stations weer
     ./storing.py -a Amsterdam
         -> geeft alle actuele storingen weer waar 'Amsterdam' in voor komt
            (dus ook Amsterdam Zuid, Amsterdam Amstel, etc.)
@@ -41,9 +39,10 @@ if os.path.isfile('storing_algehad.py') == False:
         file.write('notified = []')
 
 # Read token for pushbullet
-global TOKEN
-with open('pb_token.txt', 'r') as file:
-    TOKEN = file.read().replace('\n','')
+if pb_send == 1:
+    global TOKEN
+    with open('pb_token.txt', 'r') as file:
+        TOKEN = file.read().replace('\n','')
 
 def note(ttl,msg):
     url = "https://api.pushbullet.com/v2/pushes"
