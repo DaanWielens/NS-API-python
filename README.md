@@ -24,7 +24,7 @@ password = 'blabla'
 TOKEN_hier
 ```
 *Note:* Je kunt je pushbullet token opvragen bij https://www.pushbullet.com/#settings/account
-=============
+
 ## Stations
 Via `station.py` kan men stationsinformatie opvragen (naam, type, land, coördinaten, type).
 
