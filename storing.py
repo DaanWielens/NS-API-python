@@ -59,8 +59,6 @@ if sys.argv[1] == '-a':
 
 data = requests.get(url, auth=(username, password))
 tree = ElementTree.fromstring(data.content)
-import xmltodict
-o = xmltodict.parse(data.content)
 
 from storing_algehad import *
 
