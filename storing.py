@@ -54,7 +54,7 @@ url = 'http://webservices.ns.nl/ns-api-storingen'
 if sys.argv[1] == '-a':
     url = url + '?station=' + sys.argv[2] + '&actual=true&unplanned=false'
 
-if sys.argv[1] == '-a':
+if sys.argv[1] == '-u':
     url = url + '?station=' + sys.argv[2] + '&actual=true&unplanned=true'
 
 data = requests.get(url, auth=(username, password))
