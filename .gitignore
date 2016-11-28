@@ -11,4 +11,13 @@ Thumbs.db
 # Python and token
 ######################
 credentials.py
+credentials.pyc
 pb_token.txt
+storing_algehad.py
+storing_algehad.pyc
+kaart.png
+labels.png
+landdisr.gif
+map_empty.png
+map_current.png
+cropdisr.png
