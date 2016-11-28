@@ -16,7 +16,7 @@ NS-API: Storingen
 
 '''
 # Settings
-pb_send = 0
+pb_send = 1
 
 import os.path
 import sys
