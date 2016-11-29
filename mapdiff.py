@@ -4,6 +4,7 @@ import urllib2
 import os
 import types
 import requests
+import sys
 
 def pfile(fname,fpath,msg):
     # First request authorization to upload a file
@@ -41,20 +42,30 @@ global TOKEN
 with open('pb_token.txt', 'r') as file:
     TOKEN = file.read().replace('\n','')
 
+#Creeer 'storing al gemeld' file als die niet bestaat
+if os.path.isfile('storing_algehad.py') == False:
+    with open('storing_algehad.py','w') as file:
+        file.write('notified = []')
+
+
 # Get the NS files (download the first two only if non-existing; they're static)
-if os.path.isfile('kaart.png') == False:
-    with open('kaart.png','wt') as im:
-        data = urllib2.urlopen('http://www.ns.nl/static/generic/2.4.0/images/storingenkaart/kaart.png')
-        im.write(data.read())
+try:
+    if os.path.isfile('kaart.png') == False:
+        with open('kaart.png','wt') as im:
+            data = urllib2.urlopen('http://www.ns.nl/static/generic/2.4.0/images/storingenkaart/kaart.png')
+            im.write(data.read())
 
-if os.path.isfile('labels.png') == False:
-    with open('labels.png','wt') as im:
-        data = urllib2.urlopen('http://www.ns.nl/static/generic/2.4.0/images/storingenkaart/labels.png')
-        im.write(data.read())
+    if os.path.isfile('labels.png') == False:
+        with open('labels.png','wt') as im:
+            data = urllib2.urlopen('http://www.ns.nl/static/generic/2.4.0/images/storingenkaart/labels.png')
+            im.write(data.read())
 
-with open('landdisr.gif','wt') as im:
-    data = urllib2.urlopen('http://www.ns.nl/spoorkaart/maps/landdisr.gif')
-    im.write(data.read())
+    with open('landdisr.gif','wt') as im:
+        data = urllib2.urlopen('http://www.ns.nl/spoorkaart/maps/landdisr.gif')
+        im.write(data.read())
+except Exception:
+    print('Het downloaden van de storingskaart is mislukt. Dit script zal nu afsluiten.')
+    sys.exit()
 
 # Load images
 im_map = Image.open('kaart.png').convert("RGBA")
@@ -79,7 +90,13 @@ if isinstance(diff.getbbox(), types.NoneType) == True:
     print('No disruptions or defects within the cropped area!')
 else:
     im_c_cu.save('cropdisr.png')
-    pfile('Storingskaart','cropdisr.png','Storingen gevonden in het bijgesneden gedeelte!')
+    import storing_algehad
+    lenBefore = len(storing_algehad.notified)
     os.system('python storing.py -a Deventer')
     os.system('python storing.py -a Almelo')
     os.system('python storing.py -a Borne')
+    reload(storing_algehad)
+    lenAfter = len(storing_algehad.notified)
+    if lenAfter > lenBefore:
+        print('Nieuwe storingen gevonden, dus de kaart wordt meegezonden.')
+        pfile('Storingskaart','cropdisr.png','Storingen gevonden in het bijgesneden gedeelte!')
