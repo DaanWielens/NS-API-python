@@ -2,10 +2,10 @@
 pb_send = 1
 
 # Importeer afhankelijkheden
-import os.path
-import sys
-import requests
-from xml.etree import ElementTree
+import sys       # Nodig voor input arguments
+import requests  # Nodig voor request aan API server
+import datetime  # Nodig voor tijd vergelijken
+from xml.etree import ElementTree # Nodig om data van server mee te verwerken
 
 # Importeer credentials van credentials.py
 from credentials import *
@@ -22,6 +22,7 @@ elif len(sys.argv) == 4:
     toStation = sys.argv[2]
     viaStation = sys.argv[3]
     via = True
+
 else:
     print('Gebruik: "reisplan.py Amsterdam Zwolle" of "reisplan.py Amsterdam Zwolle Groningen" voor een via')
     sys.exit()
@@ -35,6 +36,7 @@ ongeregeldheden = 0
 pushTitle = 'Verstoring: ' + fromStation + ' ' + toStation
 pushMsg = ''
 url = 'http://webservices.ns.nl/ns-api-treinplanner?fromStation='+fromStation+'&toStation='+toStation
+tijdNu = datetime.datetime.now()
 
 # Voeg info toe van de via
 if via:
@@ -55,53 +57,73 @@ def note(ttl,msg):
 data = requests.get(url, auth=(username, password))
 tree = ElementTree.fromstring(data.content)
 
-for itt in range(0,(len(tree[0])-1)):
+for itt in range(0,(len(tree))):
     # basis attibuten van een reisadvies oppakken
     Status = tree[itt].find('Status').text
-    vertrekTijd = tree[itt].find('GeplandeVertrekTijd').text[11:16]
-    aankomstTijd = tree[itt].find('GeplandeAankomstTijd').text[11:16]
+    vertrekTijdString = tree[itt].find('GeplandeVertrekTijd').text
+    aankomstTijdString = tree[itt].find('GeplandeAankomstTijd').text
+    vertrekTijdTijd = datetime.datetime.strptime(vertrekTijdString, "%Y-%m-%dT%H:%M:%S+0100")
+    aankomstTijdTijd = datetime.datetime.strptime(aankomstTijdString, "%Y-%m-%dT%H:%M:%S+0100")
+    vertrekTijd = vertrekTijdString[11:16]
+    aankomstTijd = aankomstTijdString[11:16]
+
+    if vertrekTijdTijd < tijdNu:
+        # Rit is al vertrokken geen last meer van die ongeregeldheden
+        continue
 
     if Status != 'VOLGENS-PLAN':
         # Er is iets mis uitvinden wat
         ongeregeldheden += 1
+        meldplicht = False
+        stoMsg = ''
 
         if Status == 'VERTRAAGD':
-
             # Mogelijke problemen, uitzoeken hoe groot
             AankomstVertraging = tree[itt].find('AankomstVertraging')
             VertrekVertraging = tree[itt].find('VertrekVertraging')
 
             if (AankomstVertraging is None) and (VertrekVertraging is None):
                 # Gedurende de treinreis rijd de trein met vertraging maar haalt dit in
-                #print 'Vals alarm'
                 ongeregeldheden -= 1
                 continue
 
             else:
-                pushMsg = pushMsg + Status + '\n'
+                stoMsg = stoMsg + Status + '\n'
                 # Er is vertragin en we gaan er last van hebben
                 if VertrekVertraging is not None:
-                    pushMsg = pushMsg + 'Vertrek: ' + vertrekTijd + ' ' + VertrekVertraging.text + '\n'
+                    if len(VertrekVertraging.text) > 6 or int(VertrekVertraging.text[1]) > 5:
+                        # de vertrekvertraging is groot genoeg om te melden
+                        meldplicht = True
+
+                    stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + ' ' + VertrekVertraging.text + '\n'
                 else:
-                    pushMsg = pushMsg + 'Vertrek: ' + vertrekTijd + ' (op tijd)\n'
+                    stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + ' (op tijd)\n'
 
                 if AankomstVertraging is not None:
-                    pushMsg = pushMsg + 'Aankomst: ' + aankomstTijd + ' ' + AankomstVertraging.text + '\n'
+                    if len(AankomstVertraging.text) > 6 or int(vertrekVertraging.text[1]) > 5:
+                        # de aankomstvertraging is groot genoeg om te melden
+                        meldplicht = True
+
+                    stoMsg = stoMsg + 'Aankomst: ' + aankomstTijd + ' ' + AankomstVertraging.text + '\n'
                 else:
-                    pushMsg = pushMsg + 'Aankomst: ' + aankomstTijd + ' (op tijd)\n'
+                    stoMsg = stoMsg + 'Aankomst: ' + aankomstTijd + ' (op tijd)\n'
 
         elif Status == 'NIET-MOGELIJK':
             # Reisadvies is vervallen of niet haalbaar
-            pushMsg = pushMsg + 'Vertrek: ' + vertrekTijd + ' VERVALT\n'
-            pushMsg = pushMsg + 'Aankomst: ' + aankomstTijd + 'VERVALT\n'
+            meldplicht = True
+            stoMsg = 'NIET MOGELIJK\n'
+            stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + ' VERVALT\n'
+            stoMsg = stoMst + 'Aankomst: ' + aankomstTijd + 'VERVALT\n'
 
         else:
             # Andere gevallen, impact moeilijk te bepalen
-            pushMsg = pushMsg + Status + '\n'
-            pushMsg = pushMsg + 'Vertrek: ' + vertrekTijd + '\n'
-            pushMsg = pushMsg + 'Aankomst: ' + aankomstTijd + '\n'
+            meldplicht = True
+            stoMsg = stoMsg + Status + '\n'
+            stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + '\n'
+            stoMsg = stoMsg + 'Aankomst: ' + aankomstTijd + '\n'
 
-        pushMsg = pushMsg + '\n'
+        if meldplicht:
+            pushMsg = pushMsg + stoMsg + '\n'
 
 if ongeregeldheden > 0 and pb_send == 1:
     note(pushTitle, pushMsg)
