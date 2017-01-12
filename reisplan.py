@@ -60,6 +60,7 @@ tree = ElementTree.fromstring(data.content)
 for itt in range(0,(len(tree))):
     # basis attibuten van een reisadvies oppakken
     Status = tree[itt].find('Status').text
+
     vertrekTijdString = tree[itt].find('GeplandeVertrekTijd').text
     aankomstTijdString = tree[itt].find('GeplandeAankomstTijd').text
     vertrekTijdTijd = datetime.datetime.strptime(vertrekTijdString, "%Y-%m-%dT%H:%M:%S+0100")
@@ -73,23 +74,21 @@ for itt in range(0,(len(tree))):
 
     if Status != 'VOLGENS-PLAN':
         # Er is iets mis uitvinden wat
-        ongeregeldheden += 1
         meldplicht = False
         stoMsg = ''
 
         if Status == 'VERTRAAGD':
-            # Mogelijke problemen, uitzoeken hoe groot
+            # Mogelijke problemen, uitzoeken hoe groot/relevant
             AankomstVertraging = tree[itt].find('AankomstVertraging')
             VertrekVertraging = tree[itt].find('VertrekVertraging')
 
             if (AankomstVertraging is None) and (VertrekVertraging is None):
                 # Gedurende de treinreis rijd de trein met vertraging maar haalt dit in
-                ongeregeldheden -= 1
                 continue
 
             else:
                 stoMsg = stoMsg + Status + '\n'
-                # Er is vertragin en we gaan er last van hebben
+                # Er is vertraging en we gaan er last van hebben
                 if VertrekVertraging is not None:
                     if len(VertrekVertraging.text) > 6 or int(VertrekVertraging.text[1]) > 5:
                         # de vertrekvertraging is groot genoeg om te melden
@@ -100,7 +99,7 @@ for itt in range(0,(len(tree))):
                     stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + ' (op tijd)\n'
 
                 if AankomstVertraging is not None:
-                    if len(AankomstVertraging.text) > 6 or int(vertrekVertraging.text[1]) > 5:
+                    if len(AankomstVertraging.text) > 6 or int(AankomstVertraging.text[1]) > 5:
                         # de aankomstvertraging is groot genoeg om te melden
                         meldplicht = True
 
@@ -112,8 +111,32 @@ for itt in range(0,(len(tree))):
             # Reisadvies is vervallen of niet haalbaar
             meldplicht = True
             stoMsg = 'NIET MOGELIJK\n'
-            stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + ' VERVALT\n'
-            stoMsg = stoMst + 'Aankomst: ' + aankomstTijd + 'VERVALT\n'
+            stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + ' vervalt\n'
+            stoMsg = stoMsg + 'Aankomst: ' + aankomstTijd + ' vervalt\n'
+
+        elif Status == 'NIET-OPTIMAAL':
+            # Dit is vaak niet relevant dus extra check of een bericht nodig is
+            stoMsg = 'NIET-OPTIMAAL \n'
+            actVertrektijdString = tree[itt].find('ActueleVertrekTijd').text
+            actAankomsttijdString = tree[itt].find('ActueleAankomstTijd').text
+            actVertrekTijdTijd = datetime.datetime.strptime(actVertrektijdString, "%Y-%m-%dT%H:%M:%S+0100")
+            actAankomstTijdTijd = datetime.datetime.strptime(actAankomsttijdString, "%Y-%m-%dT%H:%M:%S+0100")
+
+            deltaVertrekTijd = actVertrekTijdTijd - vertrekTijdTijd
+            deltaAankomstTijd = actAankomstTijdTijd - aankomstTijdTijd
+
+            # Controleren of de trein later dan gepland vertrekt
+            if deltaVertrekTijd.seconds/60 > 5:
+                meldplicht = True
+                stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + ' + ' + deltaVertrekTijd/60 + ' min\n'
+            else:
+                stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + ' (op tijd)\n'
+
+            if  deltaAankomstTijd.seconds/60 > 5:
+                meldplicht = True
+                stoMsg = stoMsg + 'Aankomst: ' + vertrekTijd + ' +' + deltaAankomstTijd/60 + ' min\n'
+            else:
+                stoMsg = stoMsg + 'Aankomst: ' + aankomstTijd + ' (op tijd)\n'
 
         else:
             # Andere gevallen, impact moeilijk te bepalen
@@ -123,6 +146,7 @@ for itt in range(0,(len(tree))):
             stoMsg = stoMsg + 'Aankomst: ' + aankomstTijd + '\n'
 
         if meldplicht:
+            ongeregeldheden += 1
             pushMsg = pushMsg + stoMsg + '\n'
 
 if ongeregeldheden > 0 and pb_send == 1:
