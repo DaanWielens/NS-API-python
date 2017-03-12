@@ -60,3 +60,16 @@ Geef stations weer die exact de naam hebben zoals in de zoekopdracht:
 
 **Dependencies:**
 Het script heeft, net als `storing.py` de `credentials.py` file nodig. Zie voor de contents van de file en het aanvragen van deze credentials de informatie bij het storingscript.
+
+## Reisplan
+Met behulp van reisplan.py kun je checken of er iets mis is op een traject. 
+
+**Gebruik:**
+Controleer alle reismogelijkheden tussen Amsterdam en Utrecht:
+`./reisplan.py Amsterdam Utrecht`
+
+Controleer alle reismogelijkheden tussen Amsterdam en Utrecht via Amersfoort:
+`./reisplan.py Amsterdam Utrecht Amersfoort`
+
+**Dependencies:**
+Het script heeft de `credentials.py` file nodig en de `pb_token.txt` file.
