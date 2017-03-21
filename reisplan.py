@@ -60,6 +60,7 @@ tree = ElementTree.fromstring(data.content)
 for itt in range(0,(len(tree))):
     # basis attibuten van een reisadvies oppakken
     Status = tree[itt].find('Status').text
+    melding = tree[itt].find('Melding')
 
     vertrekTijdString = tree[itt].find('GeplandeVertrekTijd').text
     aankomstTijdString = tree[itt].find('GeplandeAankomstTijd').text
@@ -72,10 +73,11 @@ for itt in range(0,(len(tree))):
         # Rit is al vertrokken geen last meer van die ongeregeldheden
         continue
 
+    meldplicht = False
+    stoMsg = ''
+
     if Status != 'VOLGENS-PLAN':
         # Er is iets mis uitvinden wat
-        meldplicht = False
-        stoMsg = ''
 
         if Status == 'VERTRAAGD':
             # Mogelijke problemen, uitzoeken hoe groot/relevant
@@ -145,9 +147,15 @@ for itt in range(0,(len(tree))):
             stoMsg = stoMsg + 'Vertrek: ' + vertrekTijd + '\n'
             stoMsg = stoMsg + 'Aankomst: ' + aankomstTijd + '\n'
 
-        if meldplicht:
-            ongeregeldheden += 1
-            pushMsg = pushMsg + stoMsg + '\n'
+    elif (melding is not None):
+        # In het geval van geplande werkzaamheden geeeft de API aan dat alles gaat als gepland, maar met een melding
+        meldplicht = True
+        meldingBericht = melding.find('Text').text
+        stoMsg = 'Geplande aanpassing\n' + vertrekTijd + ' - ' + aankomstTijd + '\n' + meldingBericht + '\n' 
+        
+    if meldplicht:
+        ongeregeldheden += 1
+        pushMsg = pushMsg + stoMsg + '\n'
 
 if ongeregeldheden > 0 and pb_send == 1:
     note(pushTitle, pushMsg)
