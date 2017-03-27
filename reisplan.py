@@ -62,10 +62,10 @@ for itt in range(0,(len(tree))):
     Status = tree[itt].find('Status').text
     melding = tree[itt].find('Melding')
 
-    vertrekTijdString = tree[itt].find('GeplandeVertrekTijd').text
-    aankomstTijdString = tree[itt].find('GeplandeAankomstTijd').text
-    vertrekTijdTijd = datetime.datetime.strptime(vertrekTijdString, "%Y-%m-%dT%H:%M:%S+0100")
-    aankomstTijdTijd = datetime.datetime.strptime(aankomstTijdString, "%Y-%m-%dT%H:%M:%S+0100")
+    vertrekTijdString = tree[itt].find('GeplandeVertrekTijd').text[0:19]
+    aankomstTijdString = tree[itt].find('GeplandeAankomstTijd').text[0:19]
+    vertrekTijdTijd = datetime.datetime.strptime(vertrekTijdString, "%Y-%m-%dT%H:%M:%S")
+    aankomstTijdTijd = datetime.datetime.strptime(aankomstTijdString, "%Y-%m-%dT%H:%M:%S")
     vertrekTijd = vertrekTijdString[11:16]
     aankomstTijd = aankomstTijdString[11:16]
 
@@ -119,10 +119,10 @@ for itt in range(0,(len(tree))):
         elif Status == 'NIET-OPTIMAAL':
             # Dit is vaak niet relevant dus extra check of een bericht nodig is
             stoMsg = 'NIET-OPTIMAAL \n'
-            actVertrektijdString = tree[itt].find('ActueleVertrekTijd').text
-            actAankomsttijdString = tree[itt].find('ActueleAankomstTijd').text
-            actVertrekTijdTijd = datetime.datetime.strptime(actVertrektijdString, "%Y-%m-%dT%H:%M:%S+0100")
-            actAankomstTijdTijd = datetime.datetime.strptime(actAankomsttijdString, "%Y-%m-%dT%H:%M:%S+0100")
+            actVertrektijdString = tree[itt].find('ActueleVertrekTijd').text[0:19]
+            actAankomsttijdString = tree[itt].find('ActueleAankomstTijd').text[0:19]
+            actVertrekTijdTijd = datetime.datetime.strptime(actVertrektijdString, "%Y-%m-%dT%H:%M:%S")
+            actAankomstTijdTijd = datetime.datetime.strptime(actAankomsttijdString, "%Y-%m-%dT%H:%M:%S")
 
             deltaVertrekTijd = actVertrekTijdTijd - vertrekTijdTijd
             deltaAankomstTijd = actAankomstTijdTijd - aankomstTijdTijd
